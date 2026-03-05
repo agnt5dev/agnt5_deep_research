@@ -1,0 +1,33 @@
+# AGNT5 SDK Python Benchmark - Development Mode
+# Hot-reloading development container with uv and watchexec
+
+FROM debian:stable-slim
+
+WORKDIR /workspace
+
+# Install system dependencies including Rust for maturin
+RUN apt-get update && apt-get install -y \
+    curl \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:$PATH"
+
+# Install uv (Python package manager)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.cargo/bin:$PATH"
+
+# Install watchexec for hot-reloading
+RUN cargo install watchexec-cli
+
+# Set up Python environment
+ENV PYTHONUNBUFFERED=1
+ENV CARGO_TERM_COLOR=always
+
+# Default command - will be overridden by docker-compose
+CMD ["/workspace/blueprints/sdk-python-benchmark/scripts/run-dev.sh"]
