@@ -37,10 +37,6 @@ from agnt5_benchmark import (
                 wf_47_debate_agents,
                 wf_48_consensus_agents,
                 wf_49_pipeline_agents,
-    # Entities
-    ShoppingCart,
-    Counter,
-    BankAccount,
     # Agents
     tutor_agent,
     analyst_agent,
@@ -53,7 +49,6 @@ from agnt5_benchmark import (
     add_numbers,
     answer_bot
 )
-from agnt5_benchmark.entities import TutorConversation
 
 from agnt5_benchmark.workflows import simple_agentic_workflow, weather_report_workflow, simple_chat_workflow, chat_tutor_workflow, approval_workflow_hitl
 
@@ -87,7 +82,7 @@ async def main():
             service_version="1.0.0",
             coordinator_endpoint=coordinator_endpoint,
             runtime="standalone",
-            # Hybrid registration: workflows/entities/agents explicit, tools auto-included
+            # Hybrid registration: workflows/agents explicit, tools auto-included
             workflows=[
                 data_pipeline,
                 order_fulfillment,
@@ -116,7 +111,6 @@ async def main():
                 wf_48_consensus_agents,
                 wf_49_pipeline_agents,
             ],
-            entities=[ShoppingCart, Counter, BankAccount, TutorConversation],
             agents=[tutor_agent, analyst_agent, researcher_agent, report_agent, history_tutor_agent, math_tutor_agent],
             functions=[greet_user, add_numbers, answer_bot]  # Optional standalone functions,
         )

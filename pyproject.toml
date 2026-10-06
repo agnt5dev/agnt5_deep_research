@@ -6,7 +6,7 @@ authors = [
     { name = "AGNT5 Devs", email = "devs@agnt5.com" }
 ]
 dependencies = [
-    "agnt5>=0.4.0a8",
+    "agnt5~=0.14.0",
     "pydantic>=2.9.2",
 ]
 readme = "README.md"
