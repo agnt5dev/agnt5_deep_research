@@ -9,7 +9,7 @@ This blueprint demonstrates production-ready AI patterns using the AGNT5 platfor
 - **Real LLM Integration**: OpenAI, Anthropic, Groq, and other providers
 - **Streaming Responses**: Real-time token streaming for better UX
 - **Multi-Provider Support**: Provider comparison and fallback strategies
-- **SessionEntity**: Stateful conversations with automatic history management
+- **Session state**: Conversations that carry over between runs sharing a session
 - **Agents**: LLM-backed agents with tool orchestration
 - **Workflows**: Complex AI workflows using ctx.task(), ctx.parallel(), and ctx.gather()
 
@@ -61,19 +61,12 @@ All workflows use modern SDK patterns (`ctx.task()`, `ctx.parallel()`, `ctx.gath
 - `provider_fallback_workflow`: Resilient provider fallback
 - `translation_workflow`: Translation with back-translation validation
 
-### Entities (SessionEntity)
+### Session state
 
-**Conversation** (`entities.py`):
-- `Conversation`: Basic conversation with LLM integration
-- `SmartConversation`: Advanced conversation with auto-summarization
-- `AITutor`: Educational tutor specialized for teaching
-- `CodeReviewer`: Code review assistant
-
-All entities support:
-- Automatic conversation history management
-- Auto-trimming of old messages
-- Real LLM integration with provider flexibility
-- State persistence across calls
+`chat_tutor_workflow` keeps its conversation in session-scoped state
+(`ctx.session.state`, wrapped by `TutorConversation` in `entities.py`). Runs
+that share a `session_id` continue the same conversation, and the history
+survives worker restarts.
 
 ### Agents
 
@@ -150,7 +143,6 @@ See `examples.http` for comprehensive HTTP request examples, including:
 - LLM generation (sync and streaming)
 - Multi-provider comparisons
 - Conversation workflows
-- Entity interactions (SessionEntity)
 - Agent queries
 - Workflow executions
 
@@ -181,25 +173,6 @@ curl -X POST http://localhost:8080/call \
       "prompt": "Write a haiku about AI",
       "model": "openai/gpt-4o-mini"
     }
-  }'
-```
-
-### Example: SessionEntity Conversation
-
-```bash
-# Create conversation
-curl -X POST http://localhost:8080/entity/Conversation/user-123/chat \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "Hello! Can you help me with Python?",
-    "model": "openai/gpt-4o-mini"
-  }'
-
-# Continue conversation (history is maintained)
-curl -X POST http://localhost:8080/entity/Conversation/user-123/chat \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "How do I use async/await?"
   }'
 ```
 
@@ -247,31 +220,21 @@ async for chunk in lm.stream(
     print(chunk, end="", flush=True)
 ```
 
-### 2. SessionEntity for Conversations
+### 2. Session State for Conversations
 
-Automatic history management with LLM integration:
+State scoped to a session persists across the runs that share its `session_id`:
 
 ```python
-from agnt5 import SessionEntity
+from agnt5 import WorkflowContext, workflow
 
-class Conversation(SessionEntity):
-    max_turns: int = 20
-
-    async def chat(self, message: str) -> dict:
-        # History is automatic
-        await self.add_message("user", message)
-
-        # Get history for LLM context
-        history = await self.get_history()
-
-        # Call LLM
-        response = await lm.generate(
-            model="openai/gpt-4o-mini",
-            messages=history
-        )
-
-        await self.add_message("assistant", response.text)
-        return {"response": response.text}
+@workflow(chat=True)
+async def chat(ctx: WorkflowContext, message: str) -> str:
+    history = await ctx.session.state.get("messages", [])
+    history.append({"role": "user", "content": message})
+    reply = f"You said: {message}"
+    history.append({"role": "assistant", "content": reply})
+    await ctx.session.state.set("messages", history)
+    return reply
 ```
 
 ### 3. Modern Workflow Patterns
@@ -328,7 +291,7 @@ sdk-python-benchmark/
 ├── src/agnt5_benchmark/
 │   ├── __init__.py
 │   ├── agents.py             # Agent definitions
-│   ├── entities.py           # SessionEntity definitions
+│   ├── entities.py           # Chat tutor session state
 │   ├── tools.py              # Tool definitions
 │   ├── workflows.py          # Workflow definitions
 │   └── functions/            # Function definitions
@@ -362,12 +325,6 @@ sdk-python-benchmark/
 
 1. Add workflow to `src/agnt5_benchmark/workflows.py`
 2. Use `ctx.task()`, `ctx.parallel()`, or `ctx.gather()`
-3. Add tests and examples
-
-### Adding New Entities
-
-1. Add entity class to `src/agnt5_benchmark/entities.py`
-2. Inherit from `SessionEntity` for conversations
 3. Add tests and examples
 
 ## Testing

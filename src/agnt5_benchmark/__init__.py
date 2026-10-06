@@ -3,7 +3,7 @@ AGNT5 Python SDK Benchmark Service
 
 This package provides comprehensive benchmark components for testing AGNT5 platform functionality:
 - Functions: Simple and LM-powered functions
-- Entities: Stateful entities with persistence
+- Session state: the chat tutor's conversation (entities.py)
 - Workflows: Multi-step orchestration
 - Agents: AI-powered agents with tools
 - Tools: Reusable tool definitions
@@ -25,13 +25,6 @@ from agnt5_benchmark.functions import (
     generate_story,
     chat_with_context,
     SentimentAnalysis,
-)
-
-# Import entities
-from agnt5_benchmark.entities import (
-    ShoppingCart,
-    Counter,
-    BankAccount,
 )
 
 # Import workflows
@@ -99,10 +92,6 @@ __all__ = [
     "generate_story",
     "chat_with_context",
     "SentimentAnalysis",
-    # Entities
-    "ShoppingCart",
-    "Counter",
-    "BankAccount",
     # Workflows
     "data_pipeline",
     "order_fulfillment",
